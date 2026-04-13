@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QA Vision</title>
+<title>ArtegiosQC</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap');
 :root {
   --bg:#0c0c0e; --surface:#141416; --surface2:#1c1c20; --surface3:#242428;
   --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.14);
-  --accent:#d4f76e; --accent-dim:rgba(212,247,110,0.12); --accent-border:rgba(212,247,110,0.3);
+  --accent:#ffd75f; --accent-dim:rgba(255,215,95,0.12); --accent-border:rgba(255,215,95,0.3);
   --text:#f0f0ee; --text2:#8a8a88; --text3:#555554;
   --danger:#ff5f5f; --info:#6eb5ff; --r:10px; --rl:16px;
 }
@@ -22,7 +22,7 @@ body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);height
 .btn:hover{background:var(--surface3);}
 .btn:active{opacity:.8;}
 .btn-accent{background:var(--accent);color:#0c0c0e;border-color:transparent;}
-.btn-accent:hover{background:#c8f060;}
+.btn-accent:hover{background:#f5c732;}
 .btn-danger{background:rgba(255,95,95,.12);color:var(--danger);border-color:rgba(255,95,95,.25);}
 .btn-danger:hover{background:rgba(255,95,95,.2);}
 .btn-sm{padding:5px 10px;font-size:12px;}
@@ -149,7 +149,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:12p
 .grid-view::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:3px;}
 .grid-item{aspect-ratio:1;border-radius:var(--rl);overflow:hidden;border:1px solid var(--border);position:relative;cursor:pointer;background:var(--surface2);transition:border-color .1s;}
 .grid-item:hover{border-color:var(--border2);}
-.grid-item.sel{border:2px solid rgba(212,247,110,.5);}
+.grid-item.sel{border:2px solid rgba(255,215,95,.5);}
 .grid-item img{width:100%;height:100%;object-fit:cover;display:block;}
 .grid-lbl{position:absolute;bottom:0;left:0;right:0;padding:16px 7px 6px;background:linear-gradient(transparent,rgba(0,0,0,.7));font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .status-bar{padding:5px 16px;border-top:1px solid var(--border);background:var(--surface);font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;flex-shrink:0;display:flex;align-items:center;gap:8px;}
@@ -242,7 +242,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:12p
           <rect x="7.5" y="7.5" width="4.5" height="4.5" rx="1.2" fill="#0c0c0e" opacity=".4"/>
         </svg>
       </div>
-      QA Vision
+      ArtegiosQC
     </div>
     <div id="loginView">
       <div class="auth-title">Welcome back</div>
@@ -282,7 +282,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:12p
             <rect x="7.5" y="7.5" width="4.5" height="4.5" rx="1.2" fill="#0c0c0e" opacity=".4"/>
           </svg>
         </div>
-        QA Vision
+        ArtegiosQC
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
@@ -316,7 +316,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:12p
           <rect x="7.5" y="7.5" width="4.5" height="4.5" rx="1.2" fill="#0c0c0e" opacity=".4"/>
         </svg>
       </div>
-      QA Vision
+      ArtegiosQC
     </div>
     <div class="proj-breadcrumb">
       <span class="sep">/</span>
@@ -444,7 +444,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:12p
           <rect x="7.5" y="7.5" width="4.5" height="4.5" rx="1.2" fill="#0c0c0e" opacity=".4"/>
         </svg>
       </div>
-      QA Vision
+      ArtegiosQC
     </div>
     <div class="auth-title" id="reviewProjTitle">Project Review</div>
     <div class="auth-sub">You've been invited to review this project. Enter your name to continue — no account needed.</div>
@@ -496,7 +496,7 @@ var S = {
 function g(id){ return document.getElementById(id); }
 function fmtSize(b){ return b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(1)+' MB'; }
 function fmtTime(ts){ var s=(Date.now()-new Date(ts))/1000; return s<60?'just now':s<3600?Math.floor(s/60)+'m ago':s<86400?Math.floor(s/3600)+'h ago':new Date(ts).toLocaleDateString(); }
-var AVCOLS=[{bg:'rgba(212,247,110,.15)',c:'#d4f76e'},{bg:'rgba(110,181,255,.15)',c:'#6eb5ff'},{bg:'rgba(255,95,95,.15)',c:'#ff5f5f'},{bg:'rgba(107,234,138,.15)',c:'#6bea8a'},{bg:'rgba(200,150,255,.15)',c:'#c896ff'}];
+var AVCOLS=[{bg:'rgba(255,215,95,.15)',c:'#ffd75f'},{bg:'rgba(110,181,255,.15)',c:'#6eb5ff'},{bg:'rgba(255,95,95,.15)',c:'#ff5f5f'},{bg:'rgba(107,234,138,.15)',c:'#6bea8a'},{bg:'rgba(200,150,255,.15)',c:'#c896ff'}];
 function nameCol(n){ var h=0; for(var i=0;i<n.length;i++) h+=n.charCodeAt(i); return AVCOLS[h%AVCOLS.length]; }
 function initials(n){ return (n||'?').trim().split(/\s+/).map(function(w){return w[0];}).join('').toUpperCase().slice(0,2)||'?'; }
 function toast(msg){ var t=g('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(function(){t.classList.remove('show');},2500); }
