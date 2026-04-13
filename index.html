@@ -200,7 +200,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:12p
 .cmt-n{display:inline-block;background:var(--accent);color:#0c0c0e;font-size:10px;font-weight:700;padding:1px 5px;border-radius:10px;margin-left:4px;vertical-align:middle;}
 
 /* ── MODAL ── */
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:300;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .18s;}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:600;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .18s;}
 .modal-bg.open{opacity:1;pointer-events:all;}
 .modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--rl);padding:22px;width:380px;max-width:90vw;}
 .modal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
@@ -587,9 +587,14 @@ g('newProjCreateBtn').onclick=async function(){
   var name=g('newProjName').value.trim(), desc=g('newProjDesc').value.trim();
   if(!name){ showErr('newProjErr','Project name is required.'); return; }
   g('newProjCreateBtn').disabled=true; g('newProjCreateBtn').textContent='Creating…';
-  var res=await sb.from('projects').insert({name:name,description:desc,owner_id:S.user.id}).select().single();
+  var res=await sb.from('projects').insert({name:name, description:desc, owner_id:S.user.id}).select().single();
   g('newProjCreateBtn').disabled=false; g('newProjCreateBtn').textContent='Create project';
-  if(res.error){ showErr('newProjErr',res.error.message); return; }
+  if(res.error){
+    showErr('newProjErr', res.error.message);
+    // also show as toast in case modal z-index is behind something
+    toast('Error: '+res.error.message);
+    return;
+  }
   g('newProjModal').classList.remove('open');
   g('newProjName').value=''; g('newProjDesc').value='';
   toast('Project created!');
