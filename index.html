@@ -214,14 +214,18 @@ header{display:flex;align-items:center;justify-content:space-between;padding:12p
 .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(6px);background:var(--surface3);border:1px solid var(--border2);color:var(--text);padding:8px 15px;border-radius:30px;font-size:12px;font-weight:500;opacity:0;transition:all .22s;pointer-events:none;z-index:9999;white-space:nowrap;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
-/* ── NEW PROJECT MODAL ── */
-.new-proj-modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--rl);padding:26px;width:360px;max-width:90vw;}
-.new-proj-modal h2{font-size:16px;font-weight:600;margin-bottom:18px;}
+/* new project form is inline */
 
 .hidden{display:none!important;}
 .hint{background:var(--surface2);border:1px dashed var(--border2);border-radius:var(--rl);padding:13px;text-align:center;font-size:12px;color:var(--text2);line-height:1.6;}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spinr .7s linear infinite;}
 @keyframes spinr{to{transform:rotate(360deg);}}
+.review-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.05em;padding:4px 10px;border-radius:20px;background:rgba(110,181,255,.15);color:var(--info);border:1px solid rgba(110,181,255,.3);}
+.review-mode .media-rm{display:none!important;}
+.review-mode #clearBtn{display:none!important;}
+.review-mode #uploadBtn{display:none!important;}
+.review-mode #backToProjBtn{display:none!important;}
+.review-mode .upload-zone{pointer-events:none;opacity:.4;cursor:default;}
 </style>
 </head>
 <body>
@@ -298,19 +302,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:12p
   </div>
 </div>
 
-<!-- ══ NEW PROJECT MODAL ══ -->
-<div class="modal-bg" id="newProjModal">
-  <div class="new-proj-modal">
-    <div class="modal-hdr"><h2>New project</h2><button id="newProjClose">×</button></div>
-    <div class="field"><label>Project name</label><input type="text" id="newProjName" placeholder="e.g. Brand Refresh Q3"></div>
-    <div class="field"><label>Description <span style="color:var(--text3);font-weight:400;">(optional)</span></label><input type="text" id="newProjDesc" placeholder="What's being reviewed?"></div>
-    <div class="field-err hidden" id="newProjErr"></div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
-      <button class="btn btn-sm" id="newProjCancelBtn">Cancel</button>
-      <button class="btn btn-accent btn-sm" id="newProjCreateBtn">Create project</button>
-    </div>
-  </div>
-</div>
+<!-- new project form is now inline in the project grid -->
 
 <!-- ══ MAIN APP ══ -->
 <header class="hidden" id="appHeader">
@@ -440,11 +432,31 @@ header{display:flex;align-items:center;justify-content:space-between;padding:12p
   </aside>
 </div>
 
-<!-- SHARE MODAL -->
+<!-- ══ REVIEWER NAME PROMPT ══ -->
+<div class="screen hidden" id="reviewerNameScreen">
+  <div class="auth-card" style="max-width:380px;">
+    <div class="auth-logo">
+      <div class="auth-logo-dot">
+        <svg viewBox="0 0 13 13" fill="none">
+          <rect x="1" y="1" width="4.5" height="4.5" rx="1.2" fill="#0c0c0e"/>
+          <rect x="7.5" y="1" width="4.5" height="4.5" rx="1.2" fill="#0c0c0e"/>
+          <rect x="1" y="7.5" width="4.5" height="4.5" rx="1.2" fill="#0c0c0e"/>
+          <rect x="7.5" y="7.5" width="4.5" height="4.5" rx="1.2" fill="#0c0c0e" opacity=".4"/>
+        </svg>
+      </div>
+      QA Vision
+    </div>
+    <div class="auth-title" id="reviewProjTitle">Project Review</div>
+    <div class="auth-sub">You've been invited to review this project. Enter your name to continue — no account needed.</div>
+    <div class="field"><label>Your name</label><input type="text" id="reviewerName" placeholder="e.g. Sarah Chen" maxlength="60"></div>
+    <div class="field-err hidden" id="reviewerNameErr"></div>
+    <button class="btn btn-accent btn-full" id="reviewerEnterBtn">Open review →</button>
+  </div>
+</div>
 <div class="modal-bg" id="shareModal">
   <div class="modal">
     <div class="modal-hdr"><h2>Share project</h2><button id="modalClose">×</button></div>
-    <p>Anyone with this link can view and comment on this project after signing in.</p>
+    <p>Anyone with this link can view and comment on this project — <strong style="color:var(--text)">no account needed.</strong> They won't see your other projects.</p>
     <div class="url-row">
       <input type="text" id="shareUrl" readonly>
       <button class="btn btn-accent btn-sm" id="copyUrl">Copy</button>
@@ -566,40 +578,82 @@ async function loadProjects(){
 }
 
 function renderProjGrid(projects){
-  var html='<div class="proj-card new-card" id="newProjCard"><div style="font-size:28px;">+</div><div style="font-size:13px;font-weight:600;">New project</div></div>';
+  var html='';
+
+  // Inline "new project" card that expands into a form — no modal needed
+  html+='<div class="proj-card" id="newProjCard" style="cursor:pointer;" onclick="openNewProjForm()">'
+    +'<div style="font-size:28px;margin-bottom:6px;">+</div>'
+    +'<div style="font-size:13px;font-weight:600;color:var(--text2);">New project</div>'
+    +'</div>';
+
   html+=projects.map(function(p){
-    return '<div class="proj-card" onclick="showApp('+JSON.stringify(p).replace(/"/g,"&quot;")+')">'
+    var safe=JSON.stringify(p).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return '<div class="proj-card" onclick="openProject(\''+safe.replace(/"/g,'&quot;')+'\')">'
       +'<div class="proj-card-icon">📁</div>'
       +'<div class="proj-card-name">'+p.name+'</div>'
       +'<div class="proj-card-meta">'+(p.description||'No description')+'</div>'
       +'<div class="proj-card-meta" style="margin-top:6px;">'+new Date(p.created_at).toLocaleDateString()+'</div>'
       +'</div>';
   }).join('');
+
   g('projGrid').innerHTML=html;
-  g('newProjCard').onclick=function(){ g('newProjModal').classList.add('open'); g('newProjName').focus(); };
 }
 
-g('newProjClose').onclick=function(){ g('newProjModal').classList.remove('open'); };
-g('newProjCancelBtn').onclick=function(){ g('newProjModal').classList.remove('open'); };
+function openProject(safeJson){
+  try{ showApp(JSON.parse(safeJson)); }catch(e){ toast('Error opening project'); }
+}
 
-g('newProjCreateBtn').onclick=async function(){
-  clearErr('newProjErr');
-  var name=g('newProjName').value.trim(), desc=g('newProjDesc').value.trim();
-  if(!name){ showErr('newProjErr','Project name is required.'); return; }
-  g('newProjCreateBtn').disabled=true; g('newProjCreateBtn').textContent='Creating…';
+function openNewProjForm(){
+  // Replace the new-project card with an inline form
+  var card=g('newProjCard');
+  if(!card) return;
+  card.style.cursor='default';
+  card.onclick=null;
+  card.innerHTML=''
+    +'<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:12px;">New project</div>'
+    +'<input id="inlineProjName" type="text" placeholder="Project name" style="width:100%;font-family:Syne,sans-serif;font-size:12px;padding:7px 10px;background:var(--surface3);border:1px solid var(--border2);border-radius:8px;color:var(--text);outline:none;margin-bottom:8px;">'
+    +'<input id="inlineProjDesc" type="text" placeholder="Description (optional)" style="width:100%;font-family:Syne,sans-serif;font-size:12px;padding:7px 10px;background:var(--surface3);border:1px solid var(--border2);border-radius:8px;color:var(--text);outline:none;margin-bottom:10px;">'
+    +'<div id="inlineProjErr" style="font-size:11px;color:var(--danger);margin-bottom:8px;display:none;"></div>'
+    +'<div style="display:flex;gap:6px;">'
+    +'<button onclick="createProjectInline()" style="flex:1;font-family:Syne,sans-serif;font-size:12px;font-weight:600;padding:7px;border-radius:8px;border:none;background:var(--accent);color:#0c0c0e;cursor:pointer;">Create</button>'
+    +'<button onclick="cancelNewProj()" style="font-family:Syne,sans-serif;font-size:12px;font-weight:500;padding:7px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--surface3);color:var(--text2);cursor:pointer;">Cancel</button>'
+    +'</div>';
+  setTimeout(function(){ var el=g('inlineProjName'); if(el) el.focus(); }, 50);
+
+  // Allow pressing Enter to submit
+  setTimeout(function(){
+    var nameEl=g('inlineProjName'), descEl=g('inlineProjDesc');
+    if(nameEl) nameEl.addEventListener('keydown', function(e){ if(e.key==='Enter') createProjectInline(); });
+    if(descEl) descEl.addEventListener('keydown', function(e){ if(e.key==='Enter') createProjectInline(); });
+  }, 60);
+}
+
+function cancelNewProj(){ loadProjects(); }
+
+async function createProjectInline(){
+  var nameEl=g('inlineProjName'), descEl=g('inlineProjDesc'), errEl=g('inlineProjErr');
+  if(!nameEl) return;
+  var name=nameEl.value.trim(), desc=descEl?descEl.value.trim():'';
+  if(!name){ if(errEl){ errEl.textContent='Name is required.'; errEl.style.display='block'; } return; }
+  if(errEl) errEl.style.display='none';
+
+  // Disable inputs while saving
+  nameEl.disabled=true; if(descEl) descEl.disabled=true;
+  var btn=g('newProjCard').querySelector('button');
+  if(btn){ btn.textContent='Creating…'; btn.disabled=true; }
+
   var res=await sb.from('projects').insert({name:name, description:desc, owner_id:S.user.id}).select().single();
-  g('newProjCreateBtn').disabled=false; g('newProjCreateBtn').textContent='Create project';
+
   if(res.error){
-    showErr('newProjErr', res.error.message);
-    // also show as toast in case modal z-index is behind something
-    toast('Error: '+res.error.message);
+    nameEl.disabled=false; if(descEl) descEl.disabled=false;
+    if(btn){ btn.textContent='Create'; btn.disabled=false; }
+    if(errEl){ errEl.textContent=res.error.message; errEl.style.display='block'; }
+    toast('Failed: '+res.error.message);
     return;
   }
-  g('newProjModal').classList.remove('open');
-  g('newProjName').value=''; g('newProjDesc').value='';
   toast('Project created!');
   showApp(res.data);
-};
+}
 
 g('backToProjBtn').onclick=function(){ unsubComments(); showProjects(); };
 
@@ -876,21 +930,148 @@ function renderComments(){
 }
 
 // ── SHARE ──────────────────────────────────────────────────────
-g('shareBtn').onclick=function(){ g('shareUrl').value=location.href; g('shareModal').classList.add('open'); };
+g('shareBtn').onclick=function(){
+  var base=location.href.split('?')[0];
+  var reviewUrl=base+'?review='+(S.project?S.project.id:'');
+  g('shareUrl').value=reviewUrl;
+  g('shareModal').classList.add('open');
+};
 g('modalClose').onclick=function(){ g('shareModal').classList.remove('open'); };
 g('shareModal').onclick=function(e){ if(e.target===g('shareModal')) g('shareModal').classList.remove('open'); };
 g('copyUrl').onclick=function(){ navigator.clipboard.writeText(g('shareUrl').value).then(function(){toast('Copied!');}); };
 
+// ── REVIEW MODE ────────────────────────────────────────────────
+var REVIEW_MODE = false;
+var REVIEWER_NAME = '';
+
+function getReviewId(){
+  var m = location.search.match(/[?&]review=([a-f0-9\-]{36})/i);
+  return m ? m[1] : null;
+}
+
+function showReviewerNameScreen(projectId){
+  g('authScreen').classList.add('hidden');
+  g('projectsScreen').classList.add('hidden');
+  g('appHeader').classList.add('hidden');
+  g('appBody').classList.add('hidden');
+  g('reviewerNameScreen').classList.remove('hidden');
+
+  // Pre-fill if stored in localStorage
+  var stored = localStorage.getItem('qa_reviewer_name');
+  if(stored){ g('reviewerName').value = stored; }
+
+  g('reviewerEnterBtn').onclick = async function(){
+    var name = g('reviewerName').value.trim();
+    if(!name){ var e=g('reviewerNameErr'); e.textContent='Please enter your name.'; e.classList.remove('hidden'); return; }
+    g('reviewerNameErr').classList.add('hidden');
+    REVIEWER_NAME = name;
+    localStorage.setItem('qa_reviewer_name', name);
+    enterReviewMode(projectId);
+  };
+
+  g('reviewerName').addEventListener('keydown', function(e){
+    if(e.key==='Enter') g('reviewerEnterBtn').click();
+  });
+}
+
+async function enterReviewMode(projectId){
+  REVIEW_MODE = true;
+  g('reviewerNameScreen').classList.add('hidden');
+
+  // Load project via anon key (needs public RLS — see SQL patch)
+  var res = await sb.from('projects').select('*').eq('id', projectId).single();
+  if(res.error || !res.data){
+    g('reviewerNameScreen').classList.remove('hidden');
+    var e=g('reviewerNameErr'); e.textContent='Project not found or not accessible.'; e.classList.remove('hidden');
+    return;
+  }
+
+  var proj = res.data;
+  S.project = proj;
+  S.user = null; // no auth in review mode
+
+  // Show app UI in review mode
+  g('appHeader').classList.remove('hidden');
+  g('appBody').classList.remove('hidden');
+  document.body.classList.add('review-mode');
+
+  // Update header for review mode
+  g('appProjName').textContent = proj.name;
+  g('shareBtn').classList.add('hidden');
+  g('appUserAv').textContent = initials(REVIEWER_NAME);
+  g('appUserName').textContent = REVIEWER_NAME + ' (reviewer)';
+
+  // Add review badge next to project name
+  var breadcrumb = document.querySelector('.proj-breadcrumb');
+  if(breadcrumb){
+    var badge = document.createElement('span');
+    badge.className = 'review-badge';
+    badge.innerHTML = '👁 Review only';
+    breadcrumb.appendChild(badge);
+  }
+
+  S.media=[]; S.sel=0; S.comments=[];
+  refreshAll();
+  loadProjectMedia();
+  loadComments();
+  subscribeComments();
+
+  // Switch to comments tab automatically
+  setTimeout(function(){
+    var cmtTab = document.querySelector('.ptab[data-panel="comments"]');
+    if(cmtTab) cmtTab.click();
+  }, 300);
+}
+
+// Override comment posting for review mode (no user_id)
+g('cmtPost').onclick = async function(){
+  var text = g('cmtText').value.trim();
+  if(!text){ toast('Write a comment first'); return; }
+  if(!S.project) return;
+
+  var authorName, userId;
+  if(REVIEW_MODE){
+    authorName = REVIEWER_NAME || 'Reviewer';
+    userId = null;
+  } else {
+    if(!S.user) return;
+    authorName = S.user.user_metadata&&S.user.user_metadata.full_name ? S.user.user_metadata.full_name : S.user.email.split('@')[0];
+    userId = S.user.id;
+  }
+
+  var mediaRef = S.media[S.sel] ? S.media[S.sel].name : null;
+  g('cmtText').value = '';
+  var payload = {project_id:S.project.id, author_name:authorName, body:text, media_ref:mediaRef};
+  if(userId) payload.user_id = userId;
+  var res = await sb.from('comments').insert(payload);
+  if(res.error){ toast('Failed to post: '+res.error.message); g('cmtText').value = text; }
+  // realtime will update the list
+};
+
+// Remove name field from comments panel in review mode (name already captured)
+function tweakCommentFormForReview(){
+  var nameInput = g('cmtName');
+  if(nameInput) nameInput.style.display = 'none';
+}
+
 // ── INIT ───────────────────────────────────────────────────────
 (async function(){
-  var sess=await sb.auth.getSession();
-  if(sess.data&&sess.data.session&&sess.data.session.user){
+  var reviewId = getReviewId();
+  if(reviewId){
+    // Review link — skip auth, show name prompt
+    showReviewerNameScreen(reviewId);
+    return;
+  }
+
+  // Normal auth flow
+  var sess = await sb.auth.getSession();
+  if(sess.data && sess.data.session && sess.data.session.user){
     onSignIn(sess.data.session.user);
   } else {
     showAuth();
   }
-  sb.auth.onAuthStateChange(function(event,session){
-    if(event==='SIGNED_IN'&&session){ onSignIn(session.user); }
+  sb.auth.onAuthStateChange(function(event, session){
+    if(event==='SIGNED_IN' && session){ onSignIn(session.user); }
     if(event==='SIGNED_OUT'){ showAuth(); }
   });
 })();
